@@ -1,0 +1,71 @@
+var L8 = ee.ImageCollection("LANDSAT/LC08/C01/T1_TOA"),
+    geometry = ee.FeatureCollection("users/kamran/punjabprov"),
+    punjab_low = ee.FeatureCollection("users/kamran/punjab_lower"),
+    punjab_up = ee.FeatureCollection("users/kamran/punjab_upper");
+    
+    // Filter collection according to required dates
+var images = L8.filterBounds(geometry)
+            .filterDate('2015-01-01', '2015-04-15');
+print(images);
+// Using existing algorithm to mask clouds form Landsat
+var mask = require('users/fitoprincipe/geetools:cloud_masks');
+var mask_function = mask.landsatTOA(); // mask function
+
+//print(mask.help['landsatTOA']);// Read more about the masking function
+
+// apply cloud masking function to the temporal collection
+var col_free = images.map(mask_function)
+//print(col_free, 'cloud_free')
+
+//center map on punjab area
+Map.setCenter(70, 30, 5);
+
+var vizParams = {bands: ['B5', 'B4', 'B3'], min: 0, max: 2, gamma: [0.95,1.1,1]};
+
+//Map.addLayer( images, vizParams,'raw_images');
+//Map.addLayer( col_free, vizParams,'Fcc');
+//Map.addLayer(geometry,{},'shapefile',true);
+
+// Calculate NDMI
+var NDWI = function(image) {
+  return image.normalizedDifference(['B5', 'B3']).rename('NDWI')
+  .copyProperties(image,['system:time_start','system:time_end']).set('Date', ee.Date(image.get('system:time_start')).format('yyyy-MM-dd'))
+  };
+  
+//Map the function over the collection
+var withNDWI = col_free.map(NDWI);
+//print(withNDVI, 'NDVI');
+
+//Mean value of NDVI images collection
+var withNDWI_mean=withNDWI.reduce(ee.Reducer.mean());
+
+//crop to upper punjab study area
+var ndwi_up=withNDWI_mean.clip(punjab_up);
+Map.addLayer(ndwi_up,{min: -1, max: 1, palette: ['blue', 'white', 'green']}, 'NDWI NEW up');
+print(punjab_up, 'NDWIup');
+
+//crop to lower punjab study area
+var ndwi_low=withNDWI_mean.clip(punjab_low);
+Map.addLayer(ndwi_low,{min: -1, max: 1, palette: ['blue', 'white', 'green']}, 'NDWI NEW down');
+print(punjab_low, 'NDWIlow');
+
+
+
+//Export Image to Drive
+Export.image.toDrive({
+  image: ndwi_up,
+  description: 'ndwi2020_upper',
+  scale: 30,
+  folder: 'foldername',
+  maxPixels: 1e13, 
+});
+
+
+//Export Image to Drive
+Export.image.toDrive({
+  image: ndwi_low,
+  description: 'ndwi2020_lower',
+  scale: 30,
+  folder: 'foldername',
+  maxPixels: 1e13, 
+});
