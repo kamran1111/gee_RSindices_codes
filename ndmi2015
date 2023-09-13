@@ -11,8 +11,6 @@ print(images);
 var mask = require('users/fitoprincipe/geetools:cloud_masks');
 var mask_function = mask.landsatTOA(); // mask function
 
-//print(mask.help['landsatTOA']);// Read more about the masking function
-
 // apply cloud masking function to the temporal collection
 var col_free = images.map(mask_function)
 //print(col_free, 'cloud_free')
@@ -48,7 +46,6 @@ print(punjab_up, 'NDMIup');
 var ndmi_low=withNDMI_mean.clip(punjab_low);
 Map.addLayer(ndmi_low,{min: -1, max: 1, palette: ['blue', 'white', 'green']}, 'NDMI NEW down');
 print(punjab_low, 'NDMIlow');
-
 
 
 //Export Image to Drive
