@@ -11,8 +11,6 @@ print(images);
 var mask = require('users/fitoprincipe/geetools:cloud_masks');
 var mask_function = mask.landsatTOA(); // mask function
 
-//print(mask.help['landsatTOA']);// Read more about the masking function
-
 // apply cloud masking function to the temporal collection
 var col_free = images.map(mask_function)
 //print(col_free, 'cloud_free')
